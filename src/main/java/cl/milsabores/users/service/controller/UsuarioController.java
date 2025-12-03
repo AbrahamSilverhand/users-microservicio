@@ -1,6 +1,7 @@
 package cl.milsabores.users.service.controller;
 
 import cl.milsabores.users.service.model.Usuario;
+import cl.milsabores.users.service.model.AuthResponse;
 import cl.milsabores.users.service.repository.UsuarioRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,34 +32,33 @@ public class UsuarioController {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + id));
     }
 
-    // 🔹 REGISTRO (crear cuenta)
+    // 🔹 REGISTRO
     @PostMapping("/register")
-    public Usuario registrar(@RequestBody Usuario usuario) {
-        // validación básica: email único
+    public ResponseEntity<AuthResponse> registrar(@RequestBody Usuario usuario) {
         repository.findByEmail(usuario.getEmail())
                 .ifPresent(u -> {
                     throw new RuntimeException("El correo ya está registrado");
                 });
 
-        // si quieres, puedes dejar telefono vacío por ahora
         if (usuario.getTelefono() == null) {
             usuario.setTelefono("");
         }
 
-        return repository.save(usuario);
+        Usuario guardado = repository.save(usuario);
+        return ResponseEntity.ok(new AuthResponse(guardado));
     }
 
     // 🔹 LOGIN
     @PostMapping("/login")
-    public ResponseEntity<Usuario> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         Usuario usuario = repository
                 .findByEmailAndPassword(request.getEmail(), request.getPassword())
                 .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
 
-        return ResponseEntity.ok(usuario);
+        return ResponseEntity.ok(new AuthResponse(usuario));
     }
 
-    // (opcional) SIGUE EXISTIENDO EL CREATE GENÉRICO
+    // OPCIONAL: crear genérico
     @PostMapping
     public Usuario crear(@RequestBody Usuario usuario) {
         return repository.save(usuario);
